@@ -1,13 +1,37 @@
 <?php
-
+session_start(); // Start session for CSRF token and error messages
 require_once 'database.php';
+require_once 'includes/functions.php'; // <-- ADDED HERE
 
+// Generate CSRF token 
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+$csrf_token = $_SESSION['csrf_token'];
 
 $sql = "SELECT * FROM students";
 $stmt = $connect->prepare($sql);
 $stmt->execute();
 $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Check for error messages from other pages (like delete.php)
+$error_message = '';
+if (isset($_SESSION['error_message'])) {
+    $error_message = $_SESSION['error_message'];
+    unset($_SESSION['error_message']); // Clear the message after displaying
+}
+
+// Check for success messages
+$success_message = '';
+if (isset($_GET['status']) && $_GET['status'] === 'deleted_successfully') {
+    $success_message = 'Student deleted successfully!';
+}
+if (isset($_GET['status']) && $_GET['status'] === 'created_successfully') {
+    $success_message = 'Student added successfully!';
+}
+if (isset($_GET['status']) && $_GET['status'] === 'updated_successfully') {
+    $success_message = 'Student updated successfully!';
+}
 
 ?>
 <!DOCTYPE html>
@@ -31,6 +55,9 @@ $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
         td {
             vertical-align: middle;
         }
+        .action-buttons form {
+            margin-bottom: 0; /* Remove bottom margin for inline forms */
+        }
     </style>
 
 </head>
@@ -40,6 +67,19 @@ $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <div class="container">
         <h2>ระบบแสดงผลคะแนนนักศึกษา</h2>
         <hr>
+
+        <?php if (!empty($error_message)): ?>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <?php echo htmlspecialchars($error_message); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <?php endif; ?>
+        <?php if (!empty($success_message)): ?>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <?php echo htmlspecialchars($success_message); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <?php endif; ?>
 
         <a href="create.php" class="btn btn-primary">เพิ่มข้อมูลนักศึกษาใหม่</a>
 
@@ -60,28 +100,22 @@ $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <?php
 
                         foreach ($students as $student) {
-                            $grade = '';
-                            if ($student['score'] >= 80) {
-                                $grade = 'A';
-                            } elseif ($student['score'] >= 70) {
-                                $grade = 'B';
-                            } elseif ($student['score'] >= 60) {
-                                $grade = 'C';
-                            } elseif ($student['score'] >= 50) {
-                                $grade = 'D';
-                            } else {
-                                $grade = 'F';
-                            }
+                            // MODIFIED HERE: Use the calculateGrade function
+                            $grade = calculateGrade($student['score']); 
 
                             echo "<tr>";
-                            echo "<td>{$student['no']}</td>";
-                            echo "<td>{$student['name']}</td>";
-                            echo "<td>{$student['score']}</td>";
-                            echo "<td>{$grade}</td>";
-                            echo "<td>
-                                <a href='edit.php?id={$student['id']}' class='btn btn-warning'>แก้ไข</a>
-                                <a href='delete.php?id={$student['id']}' class='btn btn-danger'>ลบ</a>
-                            </td>";
+                            echo "<td>" . htmlspecialchars($student['no']) . "</td>";
+                            echo "<td>" . htmlspecialchars($student['name']) . "</td>";
+                            echo "<td>" . htmlspecialchars((string)$student['score']) . "</td>";
+                            echo "<td>" . htmlspecialchars($grade) . "</td>";
+                            echo "<td class='action-buttons'>
+                                <a href='edit.php?id={$student['id']}' class='btn btn-warning btn-sm'>แก้ไข</a>
+                                <form action='delete.php' method='POST' style='display: inline-block; margin-left: 5px;'>
+                                    <input type='hidden' name='id' value='{$student['id']}'>
+                                    <input type='hidden' name='csrf_token' value='" . htmlspecialchars($csrf_token) . "'>
+                                    <button type='submit' class='btn btn-danger btn-sm' onclick=\"return confirm('Are you sure you want to delete student " . htmlspecialchars(addslashes($student['name']), ENT_QUOTES) . "?');\">ลบ</button>
+                                </form>
+                                </td>";
                             echo "</tr>";
                         }
 
