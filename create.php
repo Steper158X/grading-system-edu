@@ -7,9 +7,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     try {
 
-        $student_id = $_POST['student_id'];
-        $student_name = $_POST['student_name'];
-        $student_score = $_POST['student_score'];
+        $student_id = filter_input(INPUT_POST, 'student_id', FILTER_SANITIZE_STRING);
+        $student_name = filter_input(INPUT_POST, 'student_name', FILTER_SANITIZE_STRING);
+        $student_score = filter_input(INPUT_POST, 'student_score', FILTER_VALIDATE_INT);
     
         $sql = "INSERT INTO students ( no , name , score ) VALUES (:student_id, :student_name, :student_score)";
         $stmt = $connect->prepare($sql);
@@ -19,9 +19,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->execute();
 
         header('Location: index.php');
+        exit;
 
     } catch (PDOException $e) {
-        echo "<script>alert('บันทึกข้อมูลไม่สำเร็จ: " . $e->getMessage() . "')</script>";
+        error_log('Insert failed: ' . $e->getMessage());
+        echo "<script>alert('บันทึกข้อมูลไม่สำเร็จ')</script>";
     }
 }
 

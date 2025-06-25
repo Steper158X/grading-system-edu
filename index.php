@@ -3,10 +3,10 @@
 require_once 'database.php';
 
 
-$sql = "SELECT * FROM students";
-$stmt = $connect->prepare($sql);
-$stmt->execute();
-$students = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $sql = "SELECT * FROM students";
+    $stmt = $connect->prepare($sql);
+    $stmt->execute();
+    $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 
 ?>
@@ -73,15 +73,15 @@ $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 $grade = 'F';
                             }
 
-                            echo "<tr>";
-                            echo "<td>{$student['no']}</td>";
-                            echo "<td>{$student['name']}</td>";
-                            echo "<td>{$student['score']}</td>";
-                            echo "<td>{$grade}</td>";
-                            echo "<td>
-                                <a href='edit.php?id={$student['id']}' class='btn btn-warning'>แก้ไข</a>
-                                <a href='delete.php?id={$student['id']}' class='btn btn-danger'>ลบ</a>
-                            </td>";
+                            echo '<tr>';
+                            echo '<td>' . htmlspecialchars($student['no'], ENT_QUOTES, 'UTF-8') . '</td>';
+                            echo '<td>' . htmlspecialchars($student['name'], ENT_QUOTES, 'UTF-8') . '</td>';
+                            echo '<td>' . htmlspecialchars($student['score'], ENT_QUOTES, 'UTF-8') . '</td>';
+                            echo '<td>' . $grade . '</td>';
+                            echo '<td>' .
+                                "<a href='edit.php?id=" . urlencode($student['id']) . "' class='btn btn-warning'>แก้ไข</a> " .
+                                "<a href='delete.php?id=" . urlencode($student['id']) . "' class='btn btn-danger'>ลบ</a>" .
+                            '</td>';
                             echo "</tr>";
                         }
 
