@@ -3,7 +3,7 @@
 require_once 'database.php';
 
 if (isset($_GET['id'])) {
-    $id = $_GET['id'];
+    $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 
     $sql = "SELECT * FROM students WHERE id = :id";
     $stmt = $connect->prepare($sql);
@@ -15,9 +15,9 @@ if (isset($_GET['id'])) {
 
         try {
 
-            $student_id = $_POST['student_id'];
-            $student_name = $_POST['student_name'];
-            $student_score = $_POST['student_score'];
+            $student_id = filter_input(INPUT_POST, 'student_id', FILTER_SANITIZE_STRING);
+            $student_name = filter_input(INPUT_POST, 'student_name', FILTER_SANITIZE_STRING);
+            $student_score = filter_input(INPUT_POST, 'student_score', FILTER_VALIDATE_INT);
 
             $sql = "UPDATE students SET no = :student_id, name = :student_name, score = :student_score WHERE id = :id";
             $stmt = $connect->prepare($sql);
@@ -28,14 +28,17 @@ if (isset($_GET['id'])) {
             $stmt->execute();
 
             header('Location: index.php');
+            exit;
         } catch (PDOException $e) {
-            echo "<script>alert('บันทึกข้อมูลไม่สำเร็จ: " . $e->getMessage() . "')</script>";
+            error_log('Update failed: ' . $e->getMessage());
+            echo "<script>alert('บันทึกข้อมูลไม่สำเร็จ')</script>";
         }
     } else {
         $student = $stmt->fetch(PDO::FETCH_ASSOC);
     }
 } else {
     header('Location: index.php');
+    exit;
 }
 
 ?>
